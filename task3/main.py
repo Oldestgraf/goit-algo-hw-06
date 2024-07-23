@@ -50,16 +50,59 @@ print(f"Number of edges: {num_edges}")
 print(degree_df)
 
 # Реалізація алгоритму Дейкстри
-def dijkstra_path(graph, start, goal):
-    return nx.dijkstra_path(graph, start, goal)
+def dijkstra(graph, start):
+    # Ініціалізація відстаней та множини невідвіданих вершин
+    distances = {vertex: float('infinity') for vertex in graph}
+    distances[start] = 0
+    unvisited = list(graph.keys())
+
+    while unvisited:
+        # Знаходження вершини з найменшою відстанню серед невідвіданих
+        current_vertex = min(unvisited, key=lambda vertex: distances[vertex])
+
+        # Якщо поточна відстань є нескінченністю, то ми завершили роботу
+        if distances[current_vertex] == float('infinity'):
+            break
+
+        for neighbor, weight in graph[current_vertex].items():
+            distance = distances[current_vertex] + weight['weight']
+
+            # Якщо нова відстань коротша, то оновлюємо найкоротший шлях
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+
+        # Видаляємо поточну вершину з множини невідвіданих
+        unvisited.remove(current_vertex)
+
+    return distances
+
+# Функція для відновлення шляху з результатів алгоритму Дейкстри
+def get_path(shortest_paths, start, goal):
+    path = []
+    current_node = goal
+    while current_node != start:
+        if current_node is None:
+            return None
+        path.append(current_node)
+        next_node = shortest_paths[current_node][0]
+        current_node = next_node
+    path.append(start)
+    path = path[::-1]
+    return path
 
 # Знаходження найкоротшого шляху від 'Аеропорт' до 'Аркадія'
-shortest_path = dijkstra_path(G, 'Аеропорт', 'Аркадія')
+start_node = 'Аеропорт'
+end_node = 'Аркадія'
+shortest_paths = dijkstra(nx.to_dict_of_dicts(G), start_node)
 print("\nDijkstra Shortest Path from 'Аеропорт' to 'Аркадія':")
-print(shortest_path)
+print(shortest_paths[end_node])
 
 # Знаходження найкоротшого шляху між всіма вершинами графа
-all_pairs_shortest_path = dict(nx.all_pairs_dijkstra_path(G))
+all_pairs_shortest_path = {}
+for start in G.nodes:
+    shortest_paths = dijkstra(nx.to_dict_of_dicts(G), start)
+    all_pairs_shortest_path[start] = shortest_paths
+
 print("\nDijkstra Shortest Paths between all pairs of nodes:")
 for start in all_pairs_shortest_path:
     for end in all_pairs_shortest_path[start]:
